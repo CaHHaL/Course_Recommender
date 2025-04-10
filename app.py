@@ -11,7 +11,7 @@ app = Flask(__name__, static_folder='static', static_url_path='')
 CORS(app)
 
 # Configure Gemini API
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+GEMINI_API_KEY = os.getenv('GOOGLE_API_KEY')
 genai.configure(api_key=GEMINI_API_KEY)
 
 # Initialize Gemini model
