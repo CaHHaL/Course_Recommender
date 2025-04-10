@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-app = Flask(__name__, static_url_path='')
+app = Flask(__name__, static_folder='static', static_url_path='')
 CORS(app)
 
 # Configure Gemini API
@@ -95,11 +95,7 @@ def get_relevant_courses(query):
 
 @app.route('/')
 def serve_index():
-    return send_from_directory('.', 'index.html')
-
-@app.route('/<path:path>')
-def serve_static(path):
-    return send_from_directory('.', path)
+    return app.send_static_file('index.html')
 
 @app.route('/api/send_message', methods=['POST'])
 def send_message():
