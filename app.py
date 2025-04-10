@@ -17,7 +17,13 @@ CORS(app)
 
 # Configure Gemini API
 GEMINI_API_KEY = os.getenv('GOOGLE_API_KEY')
-logger.info(f"API Key present: {'Yes' if GEMINI_API_KEY else 'No'}")
+logger.info(f"API Key length: {len(GEMINI_API_KEY) if GEMINI_API_KEY else 0}")
+logger.info(f"API Key first 5 chars: {GEMINI_API_KEY[:5] if GEMINI_API_KEY else 'None'}")
+
+if not GEMINI_API_KEY:
+    logger.error("No API key found in environment variables!")
+    raise ValueError("GOOGLE_API_KEY environment variable is not set")
+
 genai.configure(api_key=GEMINI_API_KEY)
 
 # Initialize Gemini model
@@ -58,35 +64,39 @@ course_database = {
 }
 
 def get_gemini_response(query):
-    # Create a focused course recommendation prompt
-    prompt = f"""
-    You are a specialized course recommendation expert. Your primary focus is helping users find the right courses based on their interests, experience level, and career goals.
-    
-    User Query: "{query}"
-    
-    Available Course Information:
-    {course_database}
-    
-    Please provide a detailed, helpful response that:
-    1. Focuses specifically on course recommendations and learning paths
-    2. Understands the user's experience level (beginner/intermediate)
-    3. Recommends specific courses from the available options
-    4. Explains why these courses would be beneficial for their goals
-    5. Suggests a logical learning path or sequence
-    6. Uses a friendly, engaging tone with emojis where appropriate
-    
-    If the query is not directly about courses, try to relate it back to relevant courses or learning opportunities.
-    Format your response in a clear, easy-to-read way with proper spacing.
-    """
-    
     try:
-        logger.info("Attempting to generate response from Gemini API")
+        logger.info("Starting Gemini API call")
+        logger.info(f"Using API key: {GEMINI_API_KEY[:5]}...")
+        
+        # Create a focused course recommendation prompt
+        prompt = f"""
+        You are a specialized course recommendation expert. Your primary focus is helping users find the right courses based on their interests, experience level, and career goals.
+        
+        User Query: "{query}"
+        
+        Available Course Information:
+        {course_database}
+        
+        Please provide a detailed, helpful response that:
+        1. Focuses specifically on course recommendations and learning paths
+        2. Understands the user's experience level (beginner/intermediate)
+        3. Recommends specific courses from the available options
+        4. Explains why these courses would be beneficial for their goals
+        5. Suggests a logical learning path or sequence
+        6. Uses a friendly, engaging tone with emojis where appropriate
+        
+        If the query is not directly about courses, try to relate it back to relevant courses or learning opportunities.
+        Format your response in a clear, easy-to-read way with proper spacing.
+        """
+        
+        logger.info("Sending request to Gemini API")
         response = model.generate_content(prompt)
-        logger.info("Successfully generated response from Gemini API")
+        logger.info("Successfully received response from Gemini API")
         return response.text
     except Exception as e:
         logger.error(f"Gemini API Error: {str(e)}")
         logger.error(f"Error type: {type(e).__name__}")
+        logger.error(f"Full error details: {str(e)}")
         return f"I apologize, but I encountered an error processing your request. Error details: {str(e)}"
 
 def get_relevant_courses(query):
