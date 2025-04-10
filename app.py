@@ -3,6 +3,11 @@ from flask_cors import CORS
 import google.generativeai as genai
 import os
 from dotenv import load_dotenv
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
@@ -12,6 +17,7 @@ CORS(app)
 
 # Configure Gemini API
 GEMINI_API_KEY = os.getenv('GOOGLE_API_KEY')
+logger.info(f"API Key present: {'Yes' if GEMINI_API_KEY else 'No'}")
 genai.configure(api_key=GEMINI_API_KEY)
 
 # Initialize Gemini model
@@ -74,11 +80,14 @@ def get_gemini_response(query):
     """
     
     try:
+        logger.info("Attempting to generate response from Gemini API")
         response = model.generate_content(prompt)
+        logger.info("Successfully generated response from Gemini API")
         return response.text
     except Exception as e:
-        print(f"Gemini API Error: {e}")
-        return "I apologize, but I encountered an error processing your request. Please try again."
+        logger.error(f"Gemini API Error: {str(e)}")
+        logger.error(f"Error type: {type(e).__name__}")
+        return f"I apologize, but I encountered an error processing your request. Error details: {str(e)}"
 
 def get_relevant_courses(query):
     query = query.lower()
@@ -99,13 +108,19 @@ def serve_index():
 
 @app.route('/api/send_message', methods=['POST'])
 def send_message():
-    data = request.json
-    user_message = data.get('message', '')
-    
-    # Get AI-generated response for any query
-    response_message = get_gemini_response(user_message)
-    
-    return jsonify({'response': response_message})
+    try:
+        data = request.json
+        user_message = data.get('message', '')
+        logger.info(f"Received message: {user_message}")
+        
+        # Get AI-generated response for any query
+        response_message = get_gemini_response(user_message)
+        logger.info("Successfully processed message")
+        
+        return jsonify({'response': response_message})
+    except Exception as e:
+        logger.error(f"Error in send_message: {str(e)}")
+        return jsonify({'response': f"Server error: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
